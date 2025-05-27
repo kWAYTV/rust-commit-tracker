@@ -9,7 +9,13 @@ async fn main() {
         .format_timestamp_secs()
         .init();
 
-    let mut tracker = CommitTracker::new();
+    let mut tracker = match CommitTracker::new() {
+        Ok(tracker) => tracker,
+        Err(e) => {
+            error!("❌ Failed to initialize tracker: {}", e);
+            return;
+        }
+    };
     
     if let Err(e) = tracker.start().await {
         error!("❌ Fatal error: {}", e);

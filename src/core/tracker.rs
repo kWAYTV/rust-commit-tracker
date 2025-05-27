@@ -13,33 +13,33 @@ pub struct CommitTracker {
 }
 
 impl CommitTracker {
-    pub fn new() -> Self {
-        let config = Config::new();
+    pub fn new() -> Result<Self, Box<dyn Error>> {
+        let config = Config::load_or_create()?;
         let scraper = CommitScraper::new();
         let notifier = DiscordNotifier::new(config.clone());
 
-        Self {
+        Ok(Self {
             config,
             scraper,
             notifier,
             last_commit_id: 0,
-        }
+        })
     }
 
     pub async fn start(&mut self) -> Result<(), Box<dyn Error>> {
-        info!("🚀 Rust commit tracker started - monitoring Facepunch commits");
+        info!("🚀 {} started - monitoring Facepunch commits", self.config.discord.bot_name);
 
         loop {
             if let Err(e) = self.check_for_new_commits().await {
                 error!("❌ {}", e);
             }
 
-            sleep(Duration::from_secs(self.config.check_interval_secs)).await;
+            sleep(Duration::from_secs(self.config.monitoring.check_interval_secs)).await;
         }
     }
 
     async fn check_for_new_commits(&mut self) -> Result<(), Box<dyn Error>> {
-        let commit = self.scraper.fetch_latest_commit(&self.config.commits_url).await?;
+        let commit = self.scraper.fetch_latest_commit(&self.config.monitoring.commits_url).await?;
 
         if commit.id > self.last_commit_id {
             self.last_commit_id = commit.id;
@@ -57,6 +57,6 @@ impl CommitTracker {
 
 impl Default for CommitTracker {
     fn default() -> Self {
-        Self::new()
+        Self::new().expect("Failed to create CommitTracker")
     }
 } 

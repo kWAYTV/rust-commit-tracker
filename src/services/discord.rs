@@ -20,7 +20,7 @@ impl DiscordNotifier {
         let embed = self.build_embed(commit);
         
         let response = self.client
-            .post(&self.config.discord_webhook_url)
+            .post(&self.config.discord.webhook_url)
             .header("Content-Type", "application/json")
             .json(&embed)
             .send()
@@ -38,10 +38,10 @@ impl DiscordNotifier {
             embeds: vec![EmbedData {
                 title: "🔧 New Rust Commit".to_string(),
                 description: format!("```\n{}\n```", commit.message),
-                color: self.config.rust_color,
+                color: self.config.rust_color(),
                 author: EmbedAuthor {
                     name: commit.author.clone(),
-                    url: self.config.commits_url.clone(),
+                    url: self.config.monitoring.commits_url.clone(),
                     icon_url: commit.avatar_url.clone(),
                 },
                 fields: vec![
@@ -62,8 +62,8 @@ impl DiscordNotifier {
                     },
                 ],
                 footer: EmbedFooter {
-                    text: "Facepunch Rust Commits".to_string(),
-                    icon_url: self.config.footer_icon_url.clone(),
+                    text: self.config.discord.bot_name.clone(),
+                    icon_url: self.config.discord.bot_avatar_url.clone(),
                 },
                 timestamp: chrono::Utc::now().to_rfc3339(),
             }],
