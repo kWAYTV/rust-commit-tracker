@@ -35,9 +35,8 @@ jobs:
       - uses: google-github-actions/release-please-action@v4
         id: release
         with:
-          # Tells release-please this is a Rust project.
-          # It will look for Cargo.toml and update the version there.
           release-type: rust
+          token: ${{ secrets.GITHUB_TOKEN }}
           # Explicitly provide the package name if Cargo.toml is not at the root,
           # or if you want to be very specific.
 
