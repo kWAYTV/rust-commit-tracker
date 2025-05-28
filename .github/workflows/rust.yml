@@ -114,14 +114,12 @@ jobs:
           cd ..
 
       - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release-please.outputs.tag_name }}
+          files: ${{ steps.asset_names.outputs.archive_path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.release-please.outputs.upload_url }}
-          asset_path: ${{ steps.asset_names.outputs.archive_path }}
-          asset_name: ${{ steps.asset_names.outputs.asset_upload_name }}
-          asset_content_type: application/octet-stream
 
   publish-crate:
     needs: [release-please, test]
