@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/kWAYTV/rust-commit-tracker/compare/v0.2.0...v0.2.1) (2025-05-28)
+
+
+### Bug Fixes
+
+* **config:** update database path description to include 'url' ([5738f46](https://github.com/kWAYTV/rust-commit-tracker/commit/5738f46ed0e404d6379be6a4a30c414f53b49dbd))
+* **config:** validate Discord webhook URL and update README instructions ([763185e](https://github.com/kWAYTV/rust-commit-tracker/commit/763185ee5625c7313fafa0cb9edb3559e8012c80))
+
 ## [0.2.0](https://github.com/kWAYTV/rust-commit-tracker/compare/v0.1.1...v0.2.0) (2025-05-28)
 
 
