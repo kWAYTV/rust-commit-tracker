@@ -1,6 +1,7 @@
 # Rust Commit Tracker
 
 [![Rust](https://github.com/kWAYTV/rust-commit-tracker/actions/workflows/rust.yml/badge.svg)](https://github.com/kWAYTV/rust-commit-tracker/actions/workflows/rust.yml)
+[![Crates.io](https://img.shields.io/crates/v/rust-commit-tracker.svg)](https://crates.io/crates/rust-commit-tracker)
 
 A reliable Discord bot that monitors Facepunch's Rust game commits and sends real-time notifications with SQLite persistence.
 
