@@ -93,7 +93,7 @@ impl Default for Config {
                 bot_avatar_url: "https://i.imgur.com/on47Qk9.png".to_string(),
             },
             monitoring: MonitoringConfig {
-                commits_url: "https://commits.facepunch.com/r/rust_reboot".to_string(),
+                commits_url: "https://commits.facepunch.com/?format=json".to_string(),
                 check_interval_secs: 50,
             },
             appearance: AppearanceConfig {

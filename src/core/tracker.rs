@@ -39,14 +39,15 @@ impl CommitTracker {
     }
 
     async fn check_for_new_commits(&mut self) -> Result<(), Box<dyn Error>> {
-        let commit = self.scraper.fetch_latest_commit(&self.config.monitoring.commits_url).await?;
+        let result = self.scraper.fetch_latest_commit(&self.config.monitoring.commits_url).await?;
+        let commit = &result.commit;
 
         if commit.id > self.last_commit_id {
             self.last_commit_id = commit.id;
             
-            info!("🆕 New commit #{} by {} - {}", commit.id, commit.author, commit.message);
+            info!("🆕 New commit #{} by {} - {}", commit.id, commit.author(), commit.message);
             
-            self.notifier.send_commit_notification(&commit).await?;
+            self.notifier.send_commit_notification(&result).await?;
             
             info!("✅ Sent to Discord");
         }
