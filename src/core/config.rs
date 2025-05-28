@@ -103,7 +103,7 @@ impl Config {
         println!("   - Discord webhook URL");
         println!("   - Bot name and avatar");
         println!("   - Monitoring settings");
-        println!("   - Database path (SQLite file)");
+        println!("   - Database path (SQLite file url)");
         println!();
         print!("Press Enter when you've finished editing the config file...");
         io::stdout().flush()?;
