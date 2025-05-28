@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/kWAYTV/rust-commit-tracker/compare/v0.1.0...v0.1.1) (2025-05-28)
+
+
+### Bug Fixes
+
+* **cargo:** add required metadata for crates.io publishing ([e50f4fe](https://github.com/kWAYTV/rust-commit-tracker/commit/e50f4fec5795d047efd92082ec9101b77b6c66c3))
+
 ## 0.1.0 (2025-05-28)
 
 
