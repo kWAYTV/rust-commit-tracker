@@ -11,6 +11,7 @@ pub struct Config {
     pub discord: DiscordConfig,
     pub monitoring: MonitoringConfig,
     pub appearance: AppearanceConfig,
+    pub database: DatabaseConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,6 +33,12 @@ pub struct AppearanceConfig {
     pub footer_icon_url: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DatabaseConfig {
+    pub url: String,
+    pub cleanup_keep_last: i64,
+}
+
 impl Config {
     pub fn load_or_create() -> Result<Self, Box<dyn Error>> {
         if Path::new(CONFIG_FILE).exists() {
@@ -43,8 +50,41 @@ impl Config {
 
     fn load_from_file() -> Result<Self, Box<dyn Error>> {
         let content = fs::read_to_string(CONFIG_FILE)?;
-        let config: Config = toml::from_str(&content)?;
-        Ok(config)
+        
+        // Try to parse the config, but handle missing fields gracefully
+        match toml::from_str::<Config>(&content) {
+            Ok(config) => Ok(config),
+            Err(e) => {
+                // If parsing fails due to missing fields, merge with defaults
+                if e.to_string().contains("missing field") {
+                    println!("⚠️  Config file is missing new fields, updating...");
+                    
+                    // Parse as a generic value first
+                    let mut existing: toml::Value = toml::from_str(&content)?;
+                    let default_config = Self::default();
+                    let default_value = toml::Value::try_from(&default_config)?;
+                    
+                    // Merge missing fields from defaults
+                    if let (toml::Value::Table(existing_table), toml::Value::Table(default_table)) = (&mut existing, default_value) {
+                        for (key, value) in default_table {
+                            if !existing_table.contains_key(&key) {
+                                existing_table.insert(key, value);
+                            }
+                        }
+                    }
+                    
+                    // Convert back to Config and save the updated version
+                    let updated_config: Config = existing.try_into()?;
+                    let updated_content = toml::to_string_pretty(&updated_config)?;
+                    fs::write(CONFIG_FILE, &updated_content)?;
+                    
+                    println!("✅ Config file updated with new fields");
+                    Ok(updated_config)
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
     }
 
     fn create_default_and_prompt() -> Result<Self, Box<dyn Error>> {
@@ -61,6 +101,7 @@ impl Config {
         println!("   - Discord webhook URL");
         println!("   - Bot name and avatar");
         println!("   - Monitoring settings");
+        println!("   - Database path (SQLite file)");
         println!();
         print!("Press Enter when you've finished editing the config file...");
         io::stdout().flush()?;
@@ -99,6 +140,10 @@ impl Default for Config {
             appearance: AppearanceConfig {
                 embed_color: "#CD412B".to_string(), // Rust orange
                 footer_icon_url: "https://i.imgur.com/on47Qk9.png".to_string(),
+            },
+            database: DatabaseConfig {
+                url: "sqlite:commits.db".to_string(),
+                cleanup_keep_last: 1000,
             },
         }
     }
