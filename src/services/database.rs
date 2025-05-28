@@ -1,6 +1,6 @@
-use sqlx::{SqlitePool, Row};
+use log::{debug, info};
+use sqlx::{Row, SqlitePool};
 use std::error::Error;
-use log::{info, debug};
 
 pub struct Database {
     pool: SqlitePool,
@@ -16,12 +16,12 @@ impl Database {
                 std::fs::File::create(file_path)?;
             }
         }
-        
+
         let pool = SqlitePool::connect(database_url).await?;
-        
+
         let db = Self { pool };
         db.initialize().await?;
-        
+
         Ok(db)
     }
 
@@ -93,9 +93,11 @@ impl Database {
     }
 
     pub async fn get_last_sent_commit_info(&self) -> Result<Option<(i32, String)>, Box<dyn Error>> {
-        let row = sqlx::query("SELECT commit_id, changeset FROM sent_commits ORDER BY commit_id DESC LIMIT 1")
-            .fetch_optional(&self.pool)
-            .await?;
+        let row = sqlx::query(
+            "SELECT commit_id, changeset FROM sent_commits ORDER BY commit_id DESC LIMIT 1",
+        )
+        .fetch_optional(&self.pool)
+        .await?;
 
         if let Some(row) = row {
             let commit_id: i32 = row.get("commit_id");
@@ -134,4 +136,4 @@ impl Database {
         info!("Cleaned up old commits, keeping last {}", keep_last);
         Ok(())
     }
-} 
+}

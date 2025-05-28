@@ -1,7 +1,7 @@
-pub mod scraper;
-pub mod discord;
 pub mod database;
+pub mod discord;
+pub mod scraper;
 
-pub use scraper::{CommitScraper, CommitResult};
+pub use database::Database;
 pub use discord::*;
-pub use database::Database; 
+pub use scraper::{CommitResult, CommitScraper};

@@ -41,4 +41,4 @@ impl Default for CommitScraper {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

@@ -4,4 +4,4 @@ pub mod services;
 
 pub use core::*;
 pub use models::*;
-pub use services::{CommitScraper, DiscordNotifier}; 
+pub use services::{CommitScraper, DiscordNotifier};

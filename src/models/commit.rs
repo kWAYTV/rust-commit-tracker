@@ -31,12 +31,12 @@ impl CommitInfo {
     pub fn link(&self) -> String {
         format!("https://commits.facepunch.com/{}", self.id)
     }
-    
+
     pub fn avatar_url(&self) -> &str {
         &self.user.avatar
     }
-    
+
     pub fn author(&self) -> &str {
         &self.user.name
     }
-} 
+}

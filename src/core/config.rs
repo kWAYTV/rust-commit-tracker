@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
 use std::error::Error;
+use std::fs;
 use std::io::{self, Write};
+use std::path::Path;
 
 const CONFIG_FILE: &str = "config.toml";
 
@@ -50,7 +50,7 @@ impl Config {
 
     fn load_from_file() -> Result<Self, Box<dyn Error>> {
         let content = fs::read_to_string(CONFIG_FILE)?;
-        
+
         // Try to parse the config, but handle missing fields gracefully
         match toml::from_str::<Config>(&content) {
             Ok(config) => Ok(config),
@@ -58,26 +58,28 @@ impl Config {
                 // If parsing fails due to missing fields, merge with defaults
                 if e.to_string().contains("missing field") {
                     println!("⚠️  Config file is missing new fields, updating...");
-                    
+
                     // Parse as a generic value first
                     let mut existing: toml::Value = toml::from_str(&content)?;
                     let default_config = Self::default();
                     let default_value = toml::Value::try_from(&default_config)?;
-                    
+
                     // Merge missing fields from defaults
-                    if let (toml::Value::Table(existing_table), toml::Value::Table(default_table)) = (&mut existing, default_value) {
+                    if let (toml::Value::Table(existing_table), toml::Value::Table(default_table)) =
+                        (&mut existing, default_value)
+                    {
                         for (key, value) in default_table {
                             if !existing_table.contains_key(&key) {
                                 existing_table.insert(key, value);
                             }
                         }
                     }
-                    
+
                     // Convert back to Config and save the updated version
                     let updated_config: Config = existing.try_into()?;
                     let updated_content = toml::to_string_pretty(&updated_config)?;
                     fs::write(CONFIG_FILE, &updated_content)?;
-                    
+
                     println!("✅ Config file updated with new fields");
                     Ok(updated_config)
                 } else {
@@ -89,12 +91,12 @@ impl Config {
 
     fn create_default_and_prompt() -> Result<Self, Box<dyn Error>> {
         println!("🔧 First time setup - Creating configuration file...");
-        
+
         let default_config = Self::default();
         let toml_content = toml::to_string_pretty(&default_config)?;
-        
+
         fs::write(CONFIG_FILE, &toml_content)?;
-        
+
         println!("✅ Created '{}'", CONFIG_FILE);
         println!();
         println!("📝 Please edit the configuration file with your settings:");
@@ -105,10 +107,10 @@ impl Config {
         println!();
         print!("Press Enter when you've finished editing the config file...");
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         // Reload the config after user edits
         Self::load_from_file()
     }
@@ -116,11 +118,9 @@ impl Config {
     pub fn rust_color(&self) -> u32 {
         // Parse hex color string to u32
         if self.appearance.embed_color.starts_with('#') {
-            u32::from_str_radix(&self.appearance.embed_color[1..], 16)
-                .unwrap_or(0xCD412B)
+            u32::from_str_radix(&self.appearance.embed_color[1..], 16).unwrap_or(0xCD412B)
         } else {
-            u32::from_str_radix(&self.appearance.embed_color, 16)
-                .unwrap_or(0xCD412B)
+            u32::from_str_radix(&self.appearance.embed_color, 16).unwrap_or(0xCD412B)
         }
     }
 }
@@ -147,4 +147,4 @@ impl Default for Config {
             },
         }
     }
-} 
+}

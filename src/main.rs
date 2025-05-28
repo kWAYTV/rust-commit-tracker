@@ -1,5 +1,5 @@
-use rust_commit_tracker::CommitTracker;
 use log::error;
+use rust_commit_tracker::CommitTracker;
 
 #[tokio::main]
 async fn main() {
@@ -16,7 +16,7 @@ async fn main() {
             return;
         }
     };
-    
+
     if let Err(e) = tracker.start().await {
         error!("❌ Fatal error: {}", e);
     }

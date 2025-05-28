@@ -1,5 +1,5 @@
 use crate::core::Config;
-use crate::models::{DiscordEmbed, EmbedData, EmbedAuthor, EmbedField, EmbedFooter};
+use crate::models::{DiscordEmbed, EmbedAuthor, EmbedData, EmbedField, EmbedFooter};
 use crate::services::scraper::CommitResult;
 use chrono;
 use std::error::Error;
@@ -17,10 +17,14 @@ impl DiscordNotifier {
         }
     }
 
-    pub async fn send_commit_notification(&self, result: &CommitResult) -> Result<(), Box<dyn Error>> {
+    pub async fn send_commit_notification(
+        &self,
+        result: &CommitResult,
+    ) -> Result<(), Box<dyn Error>> {
         let embed = self.build_embed(result);
-        
-        let response = self.client
+
+        let response = self
+            .client
             .post(&self.config.discord.webhook_url)
             .header("Content-Type", "application/json")
             .json(&embed)
@@ -28,7 +32,9 @@ impl DiscordNotifier {
             .await?;
 
         if !response.status().is_success() {
-            return Err(format!("Discord webhook failed with status: {}", response.status()).into());
+            return Err(
+                format!("Discord webhook failed with status: {}", response.status()).into(),
+            );
         }
 
         Ok(())
@@ -36,7 +42,7 @@ impl DiscordNotifier {
 
     fn build_embed(&self, result: &CommitResult) -> DiscordEmbed {
         let commit = &result.commit;
-        
+
         DiscordEmbed {
             embeds: vec![EmbedData {
                 title: "🔧 New Rust Commit".to_string(),
@@ -65,7 +71,8 @@ impl DiscordNotifier {
                     },
                 ],
                 footer: EmbedFooter {
-                    text: format!("{} • Commit {} of {}", 
+                    text: format!(
+                        "{} • Commit {} of {}",
                         self.config.discord.bot_name,
                         self.format_number(result.total_commits - result.position + 1),
                         self.format_number(result.total_commits)
@@ -82,14 +89,14 @@ impl DiscordNotifier {
         let num_str = num.to_string();
         let chars: Vec<char> = num_str.chars().collect();
         let mut result = String::new();
-        
+
         for (i, &ch) in chars.iter().enumerate() {
             if i > 0 && (chars.len() - i) % 3 == 0 {
                 result.push(',');
             }
             result.push(ch);
         }
-        
+
         result
     }
-} 
+}

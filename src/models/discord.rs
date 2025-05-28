@@ -34,4 +34,4 @@ pub struct EmbedField {
 pub struct EmbedFooter {
     pub text: String,
     pub icon_url: String,
-} 
+}
