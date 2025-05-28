@@ -54,36 +54,37 @@ rust-commit-tracker
 
 ## Configuration
 
-On first run, the application creates `config.toml`. **Only the Discord webhook URL is required** - all other settings have sensible defaults.
+On first run, the application creates `config.toml` with sensible defaults. **Only the Discord webhook URL needs to be set** - everything else works out of the box.
 
-### Required Configuration
+### Required: Discord Webhook
 
 Edit `config.toml` and set your Discord webhook URL:
 
 ```toml
 [discord]
-webhook_url = "YOUR_DISCORD_WEBHOOK_URL"  # ← Only required field
+webhook_url = "YOUR_DISCORD_WEBHOOK_URL"  # ← Required: Replace with actual webhook
 ```
 
-### Full Configuration Reference
+### Optional: Customize Defaults
+
+All other settings have working defaults but can be customized:
 
 ```toml
 [discord]
-webhook_url = "YOUR_DISCORD_WEBHOOK_URL"  # Required: Your Discord webhook
-bot_name = "Rust Commit Tracker"          # Optional: Bot display name
-bot_avatar_url = "https://i.imgur.com/on47Qk9.png"  # Optional: Bot avatar
+bot_name = "Rust Commit Tracker"          # Bot display name
+bot_avatar_url = "https://i.imgur.com/on47Qk9.png"  # Bot avatar
 
 [monitoring]
 commits_url = "https://commits.facepunch.com/?format=json"  # API endpoint
-check_interval_secs = 50  # How often to check for new commits
+check_interval_secs = 50  # Check interval in seconds
 
 [appearance]
-embed_color = "#CD412B"  # Rust orange color for Discord embeds
-footer_icon_url = "https://i.imgur.com/on47Qk9.png"
+embed_color = "#CD412B"  # Discord embed color (Rust orange)
+footer_icon_url = "https://i.imgur.com/on47Qk9.png"  # Footer icon
 
 [database]
-url = "sqlite:commits.db"  # SQLite database location
-cleanup_keep_last = 1000   # Number of commits to retain in database
+url = "sqlite:commits.db"  # Database file location
+cleanup_keep_last = 1000   # Number of commits to retain
 ```
 
 ## Getting a Discord Webhook URL

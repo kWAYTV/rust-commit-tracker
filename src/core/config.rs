@@ -42,7 +42,9 @@ pub struct DatabaseConfig {
 impl Config {
     pub fn load_or_create() -> Result<Self, Box<dyn Error>> {
         if Path::new(CONFIG_FILE).exists() {
-            Self::load_from_file()
+            let config = Self::load_from_file()?;
+            config.validate()?;
+            Ok(config)
         } else {
             Self::create_default_and_prompt()
         }
@@ -100,10 +102,10 @@ impl Config {
         println!("✅ Created '{}'", CONFIG_FILE);
         println!();
         println!("📝 Please edit the configuration file with your settings:");
-        println!("   - Discord webhook URL");
-        println!("   - Bot name and avatar");
-        println!("   - Monitoring settings");
-        println!("   - Database path (SQLite file url)");
+        println!("   - Discord webhook URL (REQUIRED)");
+        println!("   - Bot name and avatar (optional)");
+        println!("   - Monitoring settings (optional)");
+        println!("   - Database path (optional)");
         println!();
         print!("Press Enter when you've finished editing the config file...");
         io::stdout().flush()?;
@@ -111,8 +113,36 @@ impl Config {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
 
-        // Reload the config after user edits
-        Self::load_from_file()
+        // Reload and validate the config after user edits
+        let config = Self::load_from_file()?;
+        config.validate()?;
+        Ok(config)
+    }
+
+    pub fn validate(&self) -> Result<(), Box<dyn Error>> {
+        // Check if webhook URL is still the placeholder
+        if self.discord.webhook_url == "REPLACE_WITH_YOUR_DISCORD_WEBHOOK_URL" 
+            || self.discord.webhook_url.trim().is_empty() {
+            return Err(format!(
+                "❌ Discord webhook URL not configured!\n\
+                Please edit '{}' and set a valid Discord webhook URL.\n\
+                You can get one from your Discord server settings → Integrations → Webhooks",
+                CONFIG_FILE
+            ).into());
+        }
+
+        // Basic webhook URL validation
+        if !self.discord.webhook_url.starts_with("https://discord.com/api/webhooks/") 
+            && !self.discord.webhook_url.starts_with("https://discordapp.com/api/webhooks/") {
+            return Err(format!(
+                "❌ Invalid Discord webhook URL format!\n\
+                Expected: https://discord.com/api/webhooks/...\n\
+                Got: {}",
+                self.discord.webhook_url
+            ).into());
+        }
+
+        Ok(())
     }
 
     pub fn rust_color(&self) -> u32 {
