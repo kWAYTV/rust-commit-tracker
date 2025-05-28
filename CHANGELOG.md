@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/kWAYTV/rust-commit-tracker/compare/v0.1.1...v0.2.0) (2025-05-28)
+
+
+### Features
+
+* **readme:** add Crates.io badge for version tracking ([7fb5ec8](https://github.com/kWAYTV/rust-commit-tracker/commit/7fb5ec8c723919953a283d74a41b4fb0e4a926c0))
+
+
+### Bug Fixes
+
+* **ci:** replace deprecated upload-release-asset action and add crates.io badge ([1705328](https://github.com/kWAYTV/rust-commit-tracker/commit/17053286fa5ed6a1f69ff827b5f5da285401d9e5))
+
 ## [0.1.1](https://github.com/kWAYTV/rust-commit-tracker/compare/v0.1.0...v0.1.1) (2025-05-28)
 
 
