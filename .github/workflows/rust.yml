@@ -1,21 +1,171 @@
-name: Build and Test
+name: Release CI
 
 on:
   push:
     branches: ["master"]
-  pull_request:
-    branches: ["master"]
+
+# Grant permissions for release-please to create PRs, write releases, and commit files
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
+  # IMPORTANT: Set this to the name of your crate as defined in Cargo.toml
+  # This is used by release-please and for naming artifacts.
+  CRATE_NAME: rust-commit-tracker
 
 jobs:
-  build:
+  # This job handles versioning, changelog generation, and creating Release PRs.
+  # When a Release PR is merged, it creates the Git tag and GitHub Release.
+  release-please:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      # 'version' output by release-please is the raw version, e.g., "1.2.3"
+      # 'tag_name' is typically "v1.2.3"
+      version: ${{ steps.release.outputs.version }}
+      upload_url: ${{ steps.release.outputs.upload_url }} # URL for uploading release assets
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          # Tells release-please this is a Rust project.
+          # It will look for Cargo.toml and update the version there.
+          release-type: rust
+          # Explicitly provide the package name if Cargo.toml is not at the root,
+          # or if you want to be very specific.
 
+          # Optional: If you want minor bumps for 'feat' before v1.0.0
+          # bump-minor-pre-major: true
+          # Optional: If you want patch bumps for 'fix' before v1.0.0
+          # bump-patch-for-minor-pre-major: true
+          # Optional: Customize the path to your changelog
+          # changelog-path: CHANGELOG.md
+
+  # Your existing test job - good to keep!
+  # release-please will create PRs based on commits to master.
+  # Ensure your master branch is protected and requires tests to pass.
+  test:
+    runs-on: ubuntu-latest
+    # You might want this to run on PRs to master as well,
+    # especially for the Release PRs created by release-please.
+    # on:
+    #   pull_request:
+    #     branches: ["master"]
     steps:
       - uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
       - name: Build
         run: cargo build --verbose
       - name: Run tests
         run: cargo test --verbose
+
+  # This job builds the binaries for different targets.
+  # It only runs IF a release was actually created by release-please (i.e., Release PR merged).
+  build-binaries:
+    needs: [release-please, test] # Ensure tests pass and release is initiated
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ${{ matrix.os }} # Use the OS specified in the matrix
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest # Cross-compile Windows on Linux
+            asset_name_suffix: .exe
+            archive_format: zip
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            asset_name_suffix: ""
+            archive_format: tar.gz
+          - target: x86_64-apple-darwin
+            os: macos-latest # Build macOS on macOS
+            asset_name_suffix: ""
+            archive_format: tar.gz
+    steps:
+      - uses: actions/checkout@v4
+        # No need for fetch-depth: 0 here, building from the release commit.
+
+      - name: Install Rust toolchain for target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable # Or a specific version
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (for Windows target on Linux)
+        if: matrix.target == 'x86_64-pc-windows-gnu' && runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y gcc-mingw-w64-x86-64
+
+      - name: Build release binary
+        run: |
+          # Set linker for windows cross-compilation if on Linux runner
+          if [ "${{ matrix.target }}" = "x86_64-pc-windows-gnu" ] && [ "${{ runner.os }}" = "Linux" ]; then
+            export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=x86_64-w64-mingw32-gcc
+          fi
+          cargo build --release --target ${{ matrix.target }} --verbose
+
+      - name: Determine Asset Names
+        id: asset_names
+        shell: bash # Ensure bash is used for consistency
+        run: |
+          # Use the CRATE_NAME from env for the binary's base name
+          local_crate_name="${{ env.CRATE_NAME }}"
+          # Use the tag_name from release-please for versioning in the archive
+          local_tag_name="${{ needs.release-please.outputs.tag_name }}"
+
+          binary_filename="${local_crate_name}${{ matrix.asset_name_suffix }}"
+          archive_filename="${local_crate_name}-${local_tag_name}-${{ matrix.target }}.${{ matrix.archive_format }}"
+
+          echo "binary_path=target/${{ matrix.target }}/release/${binary_filename}" >> $GITHUB_OUTPUT
+          echo "archive_path=dist/${archive_filename}" >> $GITHUB_OUTPUT
+          echo "asset_upload_name=${archive_filename}" >> $GITHUB_OUTPUT
+          echo "packaged_binary_name=${binary_filename}" >> $GITHUB_OUTPUT
+
+      - name: Package binary
+        shell: bash # Ensure bash is used
+        run: |
+          mkdir -p dist
+          cp "${{ steps.asset_names.outputs.binary_path }}" "dist/${{ steps.asset_names.outputs.packaged_binary_name }}"
+          cd dist
+          if [ "${{ matrix.archive_format }}" = "zip" ]; then
+            zip -r "${{ steps.asset_names.outputs.asset_upload_name }}" "${{ steps.asset_names.outputs.packaged_binary_name }}"
+          else
+            tar -czf "${{ steps.asset_names.outputs.asset_upload_name }}" "${{ steps.asset_names.outputs.packaged_binary_name }}"
+          fi
+          cd .. # Go back to the original directory
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.release-please.outputs.upload_url }}
+          asset_path: ${{ steps.asset_names.outputs.archive_path }}
+          asset_name: ${{ steps.asset_names.outputs.asset_upload_name }}
+          asset_content_type: application/octet-stream # Or specific types like application/zip
+
+  # Optional: Job to publish your crate to crates.io
+  publish-crate:
+    needs: [release-please, test] # Depends on a release being created and tests passing
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Checkout the specific commit that was tagged for this release
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        # Ensure CARGO_REGISTRY_TOKEN is set as a secret in your GitHub repository settings
