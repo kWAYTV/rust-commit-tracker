@@ -32,7 +32,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       upload_url: ${{ steps.release.outputs.upload_url }} # URL for uploading release assets
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: rust
